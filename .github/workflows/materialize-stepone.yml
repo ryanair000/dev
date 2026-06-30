@@ -3,6 +3,8 @@ name: Diagnose StepOne archive
 on:
   push:
     branches: [codex/stepone-production-app]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: read
@@ -13,6 +15,8 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
       - name: Rebuild and inspect archive
         shell: bash
         run: |
