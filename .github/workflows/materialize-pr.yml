@@ -1,0 +1,39 @@
+name: Materialize StepOne on PR
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/stepone-jenga-production
+      - name: Rebuild and verify source archive
+        run: |
+          cat .bootstrap/part-0[0-7] > /tmp/stepone.b64
+          python - <<'PY'
+          from pathlib import Path
+          target = Path('/tmp/stepone.b64')
+          target.write_bytes(target.read_bytes() + bytes.fromhex(Path('.bootstrap/part-08.hex').read_text().strip()))
+          PY
+          base64 -d /tmp/stepone.b64 > /tmp/stepone.tar.xz
+          echo "c3e68a5588f95c8788d5f15eaeede85fc6ac6b3b2269d570755cee3faed378bf  /tmp/stepone.tar.xz" | sha256sum -c -
+          tar -tJf /tmp/stepone.tar.xz >/dev/null
+      - name: Materialize source
+        run: |
+          rm -rf .bootstrap
+          tar -xJf /tmp/stepone.tar.xz -C .
+          rm -f .github/workflows/materialize-stepone.yml .github/workflows/materialize-pr.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Build StepOne production app for Jenga"
+          git push origin HEAD:codex/stepone-jenga-production
