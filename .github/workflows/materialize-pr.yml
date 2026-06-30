@@ -1,8 +1,8 @@
-name: Materialize StepOne production app
+name: Materialize StepOne on PR
 
 on:
-  push:
-    branches: [codex/stepone-jenga-production]
+  pull_request:
+    branches: [main]
 
 permissions:
   contents: write
@@ -31,7 +31,7 @@ jobs:
         run: |
           rm -rf .bootstrap
           tar -xJf /tmp/stepone.tar.xz -C .
-          rm -f .github/workflows/materialize-stepone.yml
+          rm -f .github/workflows/materialize-stepone.yml .github/workflows/materialize-pr.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
