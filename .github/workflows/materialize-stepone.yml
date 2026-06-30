@@ -1,48 +1,39 @@
-name: Diagnose StepOne archive
+name: Materialize StepOne production app
 
 on:
   push:
-    branches: [codex/stepone-production-app]
-  pull_request:
-    branches: [main]
+    branches: [codex/stepone-jenga-production]
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
-      - name: Rebuild and inspect archive
-        shell: bash
+          ref: codex/stepone-jenga-production
+      - name: Rebuild and verify source archive
         run: |
-          set +e
-          cat .bootstrap/part-* > /tmp/stepone.b64
+          cat .bootstrap/part-0[0-7] > /tmp/stepone.b64
+          python - <<'PY'
+          from pathlib import Path
+          target = Path('/tmp/stepone.b64')
+          target.write_bytes(target.read_bytes() + bytes.fromhex(Path('.bootstrap/part-08.hex').read_text().strip()))
+          PY
           base64 -d /tmp/stepone.b64 > /tmp/stepone.tar.xz
-          decode_status=$?
-          actual_sha=$(sha256sum /tmp/stepone.tar.xz | cut -d' ' -f1)
-          xz -t /tmp/stepone.tar.xz
-          xz_status=$?
-          tar -tJf /tmp/stepone.tar.xz > /tmp/archive-files.txt
-          tar_status=$?
-          {
-            echo "expected_sha=7e6fd188a9a0f60f9843657ddd8a37c05858675ac00b54148b667291b2b5270f"
-            echo "actual_sha=$actual_sha"
-            echo "decode_status=$decode_status"
-            echo "xz_status=$xz_status"
-            echo "tar_status=$tar_status"
-            echo "base64_bytes=$(wc -c < /tmp/stepone.b64)"
-            echo "archive_bytes=$(wc -c < /tmp/stepone.tar.xz)"
-          } > /tmp/materialize-diagnostics.txt
-          cat /tmp/materialize-diagnostics.txt
-      - uses: actions/upload-artifact@v4
-        with:
-          name: stepone-archive-diagnostics
-          path: |
-            /tmp/materialize-diagnostics.txt
-            /tmp/archive-files.txt
-            /tmp/stepone.tar.xz
+          echo "c3e68a5588f95c8788d5f15eaeede85fc6ac6b3b2269d570755cee3faed378bf  /tmp/stepone.tar.xz" | sha256sum -c -
+          tar -tJf /tmp/stepone.tar.xz >/dev/null
+      - name: Materialize source
+        run: |
+          rm -rf .bootstrap
+          tar -xJf /tmp/stepone.tar.xz -C .
+          rm -f .github/workflows/materialize-stepone.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Build StepOne production app for Jenga"
+          git push origin HEAD:codex/stepone-jenga-production
