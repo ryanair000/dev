@@ -1,0 +1,52 @@
+name: Diagnose StepOne archive
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: codex/stepone-jenga-production
+      - name: Diagnose archive
+        shell: bash
+        run: |
+          set +e
+          cat .bootstrap/part-0[0-7] > /tmp/stepone.b64
+          python - <<'PY'
+          from pathlib import Path
+          target = Path('/tmp/stepone.b64')
+          target.write_bytes(target.read_bytes() + bytes.fromhex(Path('.bootstrap/part-08.hex').read_text().strip()))
+          PY
+          append_status=$?
+          base64 -d /tmp/stepone.b64 > /tmp/stepone.tar.xz
+          decode_status=$?
+          actual_sha=$(sha256sum /tmp/stepone.tar.xz | cut -d' ' -f1)
+          xz -t /tmp/stepone.tar.xz
+          xz_status=$?
+          tar -tJf /tmp/stepone.tar.xz > /tmp/archive-files.txt
+          tar_status=$?
+          {
+            echo "expected_sha=c3e68a5588f95c8788d5f15eaeede85fc6ac6b3b2269d570755cee3faed378bf"
+            echo "actual_sha=$actual_sha"
+            echo "append_status=$append_status"
+            echo "decode_status=$decode_status"
+            echo "xz_status=$xz_status"
+            echo "tar_status=$tar_status"
+            echo "base64_bytes=$(wc -c < /tmp/stepone.b64)"
+            echo "archive_bytes=$(wc -c < /tmp/stepone.tar.xz)"
+          } > /tmp/diagnostic.txt
+          cat /tmp/diagnostic.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stepone-diagnostic
+          path: |
+            /tmp/diagnostic.txt
+            /tmp/archive-files.txt
