@@ -1,0 +1,35 @@
+name: Materialize StepOne source
+
+on:
+  push:
+    branches: [codex/stepone-production-app]
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Rebuild source archive
+        run: |
+          cat .bootstrap/part-* > /tmp/stepone.b64
+          base64 -d /tmp/stepone.b64 > /tmp/stepone.tar.xz
+          echo "7e6fd188a9a0f60f9843657ddd8a37c05858675ac00b54148b667291b2b5270f  /tmp/stepone.tar.xz" | sha256sum -c -
+      - name: Materialize source
+        run: |
+          rm -rf .bootstrap
+          tar -xJf /tmp/stepone.tar.xz -C .
+          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          rm -f .github/workflows/materialize.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Build StepOne production app"
+          git push
