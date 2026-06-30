@@ -1,27 +1,19 @@
-name: Materialize StepOne source
+name: Diagnose StepOne archive
 
 on:
   push:
     branches: [codex/stepone-production-app]
-  pull_request:
-    branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  materialize:
-    if: github.actor != 'github-actions[bot]'
+  diagnose:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event_name == 'push' && github.ref_name || github.head_ref }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - name: Rebuild and validate source archive
+      - name: Rebuild and inspect archive
         shell: bash
         run: |
           set +e
@@ -39,26 +31,14 @@ jobs:
             echo "decode_status=$decode_status"
             echo "xz_status=$xz_status"
             echo "tar_status=$tar_status"
+            echo "base64_bytes=$(wc -c < /tmp/stepone.b64)"
             echo "archive_bytes=$(wc -c < /tmp/stepone.tar.xz)"
           } > /tmp/materialize-diagnostics.txt
           cat /tmp/materialize-diagnostics.txt
-          if [ "$decode_status" -ne 0 ] || [ "$xz_status" -ne 0 ] || [ "$tar_status" -ne 0 ]; then
-            cp /tmp/materialize-diagnostics.txt .bootstrap/diagnostic.txt
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add .bootstrap/diagnostic.txt
-            git commit -m "Add source archive diagnostics" || true
-            git push origin HEAD:codex/stepone-production-app || true
-            exit 1
-          fi
-      - name: Materialize source
-        run: |
-          rm -rf .bootstrap
-          tar -xJf /tmp/stepone.tar.xz -C .
-          npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-          rm -f .github/workflows/materialize.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
-          git commit -m "Build StepOne production app"
-          git push origin HEAD:codex/stepone-production-app
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stepone-archive-diagnostics
+          path: |
+            /tmp/materialize-diagnostics.txt
+            /tmp/archive-files.txt
+            /tmp/stepone.tar.xz
