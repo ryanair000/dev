@@ -51,7 +51,7 @@ Required values:
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 NEXT_PUBLIC_SUPABASE_URL=https://llmbgigriltgikzmfmnf.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
-NEXT_PUBLIC_WHATSAPP_NUMBER=254700000000
+NEXT_PUBLIC_WHATSAPP_NUMBER=254742752439
 ```
 
 Never expose a Supabase secret or service-role key in a `NEXT_PUBLIC_` variable.
