@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createAppointmentAction, createEnquiryAction } from "@/app/actions";
+import { createAppointmentAction } from "@/app/actions";
 import { Flash } from "@/components/flash";
 import { SiteShell } from "@/components/site-shell";
 import { getVehicleBySlug } from "@/lib/data";
@@ -54,7 +54,7 @@ export default async function CarDetailPage({ params, searchParams }: { params: 
                   <div className="spec"><small>Location</small><strong>{vehicle.location}</strong></div>
                 </div>
               </div>
-              <form action={createEnquiryAction} className="panel form-grid">
+              <form action="/api/enquiries" method="post" className="panel form-grid">
                 <input type="hidden" name="vehicle_id" value={vehicle.id} />
                 <input type="hidden" name="return_to" value={path} />
                 <input type="hidden" name="enquiry_type" value="Vehicle availability" />
