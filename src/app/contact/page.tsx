@@ -1,9 +1,8 @@
-import { createEnquiryAction } from "@/app/actions";
 import { Flash } from "@/components/flash";
 import { SiteShell } from "@/components/site-shell";
 import { getBusinessSettings } from "@/lib/data";
 
-type SearchParams = Promise<{ sent?: string; error?: string }>;
+ type SearchParams = Promise<{ sent?: string; error?: string }>;
 export const dynamic = "force-dynamic";
 
 export default async function ContactPage({ searchParams }: { searchParams: SearchParams }) {
@@ -39,7 +38,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Sear
               <p><strong>Hours</strong><br />{settings.opening_hours}</p>
               <a className="button button-blue" href={`https://wa.me/${settings.whatsapp}`} target="_blank" rel="noreferrer">Chat on WhatsApp</a>
             </aside>
-            <form action={createEnquiryAction} className="panel form-grid">
+            <form action="/api/enquiries" method="post" className="panel form-grid">
               <input type="hidden" name="return_to" value="/contact" />
               <div className="field field-full"><h2>Send a message</h2></div>
               <div className="field"><label>Full name</label><input name="full_name" required /></div>
