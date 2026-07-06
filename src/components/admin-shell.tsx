@@ -8,6 +8,7 @@ const links = [
   ["/admin/enquiries", "Sales Enquiries"],
   ["/admin/rentals", "Rental Requests"],
   ["/admin/appointments", "Appointments"],
+  ["/admin/reviews", "Customer Reviews"],
   ["/admin/calendar", "Rental Calendar"],
   ["/admin/settings", "Website Settings"],
 ];

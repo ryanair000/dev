@@ -1,0 +1,30 @@
+.reviews-section { background: #eef8fc; }
+.review-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.review-card { min-height: 100%; padding: 24px; background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); display: flex; flex-direction: column; }
+.review-card h3 { margin: 14px 0 0; font-size: 21px; }
+.review-message { margin: 14px 0 24px; color: #374151; font-size: 15px; line-height: 1.75; }
+.review-card footer { margin-top: auto; padding-top: 16px; border-top: 1px solid var(--border); display: grid; gap: 3px; }
+.review-card footer span { color: var(--muted); font-size: 12px; }
+.review-stars, .review-summary-stars { color: var(--gold); letter-spacing: 3px; font-size: 18px; }
+.star-muted { color: #d7dde5; }
+.review-empty { padding: 28px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.review-empty h3 { margin: 8px 0 0; font-size: 24px; }
+.review-empty p { margin-bottom: 0; color: var(--muted); }
+.review-summary-card { padding: 30px; background: #fff; border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow); }
+.review-summary-card strong { display: block; margin-top: 16px; font-size: 22px; }
+.review-summary-card p { margin-bottom: 0; }
+.admin-review-stars { white-space: nowrap; letter-spacing: 1px; font-size: 14px; }
+.review-admin-form { min-width: 230px; display: grid; gap: 8px; }
+.review-admin-form select { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; background: #fff; }
+.inline-check { display: flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.button-danger { color: #a31e28; background: #fff0f2; border: 1px solid #f1bcc3; }
+
+@media (max-width: 960px) {
+  .review-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .review-grid { grid-template-columns: 1fr; }
+  .review-empty { align-items: stretch; flex-direction: column; }
+  .review-empty .button { width: 100%; }
+}

@@ -15,6 +15,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
           <nav className="desktop-nav" aria-label="Main navigation">
             <Link href="/cars">Cars for Sale</Link>
             <Link href="/rentals">Car Rentals</Link>
+            <Link href="/reviews">Reviews</Link>
             <Link href="/about">About</Link>
             <Link href="/help">Help</Link>
             <Link href="/contact">Contact</Link>
@@ -26,6 +27,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
             <nav>
               <Link href="/cars">Cars for Sale</Link>
               <Link href="/rentals">Car Rentals</Link>
+              <Link href="/reviews">Reviews</Link>
               <Link href="/about">About</Link>
               <Link href="/help">Help</Link>
               <Link href="/contact">Contact</Link>
@@ -47,6 +49,7 @@ export async function SiteShell({ children }: { children: ReactNode }) {
             <h3>Explore</h3>
             <Link href="/cars">Cars for Sale</Link>
             <Link href="/rentals">Car Rentals</Link>
+            <Link href="/reviews">Customer Reviews</Link>
             <Link href="/help">Rental Terms</Link>
           </div>
           <div>
