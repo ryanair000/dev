@@ -126,8 +126,6 @@ export async function submitEnquiry(formData: FormData) {
     preferred_contact: parsed.data.preferred_contact,
     message: parsed.data.message,
     vehicle_id: vehicleId,
-    status: "new",
-    internal_notes: null,
   });
 
   if (error) {
