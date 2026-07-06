@@ -36,7 +36,9 @@ export function formatDateTime(value: string | Date) {
 }
 
 export function makeReference(prefix: string) {
-  return `${prefix}-${Date.now().toString().slice(-6)}`;
+  const timestamp = Date.now().toString(36).toUpperCase();
+  const random = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `${prefix}-${timestamp}-${random}`;
 }
 
 export function safeReturnTo(value: FormDataEntryValue | null, fallback: string) {
