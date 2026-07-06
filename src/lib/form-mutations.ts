@@ -126,9 +126,16 @@ export async function submitEnquiry(formData: FormData) {
     preferred_contact: parsed.data.preferred_contact,
     message: parsed.data.message,
     vehicle_id: vehicleId,
+    status: "new",
+    internal_notes: null,
   });
 
   if (error) {
+    console.error("enquiry database insert failed", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
     throw new FormMutationError("We could not send your enquiry. Please try again or use WhatsApp.", { cause: error });
   }
 
