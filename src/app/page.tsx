@@ -1,16 +1,19 @@
 import Link from "next/link";
+import { ReviewCard } from "@/components/review-card";
 import { SiteShell } from "@/components/site-shell";
 import { VehicleCard } from "@/components/vehicle-card";
 import { getBusinessSettings, getHomepageContent, getVehicles } from "@/lib/data";
+import { getApprovedReviews } from "@/lib/reviews";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [sales, rentals, content, settings] = await Promise.all([
+  const [sales, rentals, content, settings, reviews] = await Promise.all([
     getVehicles({ listingType: "sale", published: true, featured: true }),
     getVehicles({ listingType: "rental", published: true, featured: true }),
     getHomepageContent(),
     getBusinessSettings(),
+    getApprovedReviews(3),
   ]);
   const eyebrow = content?.eyebrow || "Kilimani, Nairobi";
   const headline = content?.headline || "Buy or hire your next car with confidence.";
@@ -63,6 +66,31 @@ export default async function HomePage() {
             <Link href="/rentals" className="button button-blue">Explore rentals</Link>
           </div>
           <div className="grid-3">{rentals.slice(0, 3).map((vehicle) => <VehicleCard key={vehicle.id} vehicle={vehicle} />)}</div>
+        </div>
+      </section>
+
+      <section className="section reviews-section">
+        <div className="container">
+          <div className="section-head">
+            <div>
+              <p className="eyebrow">Customer reviews</p>
+              <h2>Experiences shared by StepOne customers.</h2>
+              <p>Reviews are checked by the StepOne team before they are published.</p>
+            </div>
+            <Link href="/reviews" className="button button-outline">View or leave a review</Link>
+          </div>
+          {reviews.length ? (
+            <div className="review-grid">{reviews.map((review) => <ReviewCard key={review.id} review={review} />)}</div>
+          ) : (
+            <div className="review-empty panel">
+              <div>
+                <span className="review-summary-stars">★★★★★</span>
+                <h3>Customer reviews are now open.</h3>
+                <p>Be the first customer to share a purchase, rental or service experience.</p>
+              </div>
+              <Link href="/reviews" className="button button-primary">Leave a review</Link>
+            </div>
+          )}
         </div>
       </section>
 
