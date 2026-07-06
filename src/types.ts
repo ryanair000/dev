@@ -87,6 +87,19 @@ export type Appointment = {
   vehicle?: { id: string; make: string; model: string; slug: string } | null;
 };
 
+export type Review = {
+  id: string;
+  full_name: string;
+  rating: number;
+  review_type: "purchase" | "rental" | "service";
+  title: string | null;
+  message: string;
+  status: "pending" | "approved" | "rejected";
+  featured: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
 export type BusinessSettings = {
   business_name: string;
   rental_name: string;
