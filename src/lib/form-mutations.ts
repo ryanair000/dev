@@ -6,17 +6,17 @@ const MAX_VEHICLE_IMAGE_BYTES = 4 * 1024 * 1024;
 const VEHICLE_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
 
 const emailField = z.string().trim().email().optional().or(z.literal(""));
-const phoneField = z.string().trim().min(9).max(30);
-const nameField = z.string().trim().min(2).max(120);
+const phoneField = z.string().trim().min(7).max(40);
+const nameField = z.string().trim().min(1).max(120);
 
 const enquirySchema = z.object({
   full_name: nameField,
   phone: phoneField,
   email: emailField,
-  enquiry_type: z.string().trim().min(2).max(80),
+  enquiry_type: z.string().trim().min(1).max(80),
   preferred_contact: z.enum(["WhatsApp", "Phone", "Email"]),
-  message: z.string().trim().min(5).max(1600),
-  vehicle_id: z.string().uuid().optional().or(z.literal("")),
+  message: z.string().trim().min(1).max(2000),
+  vehicle_id: z.string().trim().max(80).optional().or(z.literal("")),
 });
 
 const vehicleSchema = z.object({
@@ -62,6 +62,25 @@ function stringFields(formData: FormData) {
   return values;
 }
 
+function normalizePreferredContact(value?: string): "WhatsApp" | "Phone" | "Email" {
+  const normalized = value?.trim().toLowerCase();
+  if (normalized === "phone" || normalized === "call") return "Phone";
+  if (normalized === "email" || normalized === "e-mail") return "Email";
+  return "WhatsApp";
+}
+
+function enquiryValidationMessage(error: z.ZodError) {
+  const field = String(error.issues[0]?.path[0] ?? "");
+  const messages: Record<string, string> = {
+    full_name: "Please enter your name.",
+    phone: "Please enter a valid phone number.",
+    email: "Please enter a valid email address or leave it blank.",
+    enquiry_type: "Please select an enquiry type.",
+    message: "Please enter a short message.",
+  };
+  return messages[field] ?? "Please check the form details and try again.";
+}
+
 function numberOrNull(value?: string) {
   if (!value) return null;
   const number = Number(value);
@@ -75,14 +94,27 @@ function imageExtension(mimeType: string) {
 }
 
 export async function submitEnquiry(formData: FormData) {
-  const parsed = enquirySchema.safeParse(stringFields(formData));
+  const fields = stringFields(formData);
+  const parsed = enquirySchema.safeParse({
+    ...fields,
+    enquiry_type: fields.enquiry_type?.trim() || "General enquiry",
+    preferred_contact: normalizePreferredContact(fields.preferred_contact),
+  });
+
   if (!parsed.success) {
-    throw new FormMutationError("Please check the form details and try again.");
+    console.warn("enquiry validation failed", {
+      field: parsed.error.issues[0]?.path[0] ?? "unknown",
+      code: parsed.error.issues[0]?.code ?? "unknown",
+    });
+    throw new FormMutationError(enquiryValidationMessage(parsed.error));
   }
   if (!isSupabaseConfigured()) {
     throw new FormMutationError("Enquiries are temporarily unavailable. Please call or WhatsApp StepOne.");
   }
 
+  const vehicleId = parsed.data.vehicle_id && z.string().uuid().safeParse(parsed.data.vehicle_id).success
+    ? parsed.data.vehicle_id
+    : null;
   const reference = makeReference("ENQ");
   const supabase = await createClient();
   const { error } = await supabase.from("stepone_enquiries").insert({
@@ -93,10 +125,15 @@ export async function submitEnquiry(formData: FormData) {
     enquiry_type: parsed.data.enquiry_type,
     preferred_contact: parsed.data.preferred_contact,
     message: parsed.data.message,
-    vehicle_id: parsed.data.vehicle_id || null,
+    vehicle_id: vehicleId,
   });
 
   if (error) {
+    console.error("enquiry database insert failed", {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+    });
     throw new FormMutationError("We could not send your enquiry. Please try again or use WhatsApp.", { cause: error });
   }
 
