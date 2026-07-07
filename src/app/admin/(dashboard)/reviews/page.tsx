@@ -1,3 +1,4 @@
+import { Flash } from "@/components/flash";
 import { getAllReviews } from "@/lib/reviews";
 import { formatDateTime } from "@/lib/utils";
 
@@ -15,8 +16,7 @@ export default async function ReviewsAdmin({ searchParams }: { searchParams: Sea
           <p>Approve, feature or reject customer feedback before it appears publicly.</p>
         </div>
       </div>
-      {params.updated && <div className="flash flash-success">Review updated successfully.</div>}
-      {params.error && <div className="flash flash-error">{decodeURIComponent(params.error)}</div>}
+      <Flash success={params.updated ? "Review updated successfully." : undefined} error={params.error} />
       <div className="panel table-wrap">
         <table>
           <thead><tr><th>Customer</th><th>Rating</th><th>Review</th><th>Status</th><th>Received</th><th>Moderate</th></tr></thead>

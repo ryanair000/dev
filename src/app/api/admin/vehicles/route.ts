@@ -24,15 +24,18 @@ export async function POST(request: NextRequest) {
   const errorPath = existingId ? `/admin/vehicles/${existingId}` : "/admin/vehicles/new";
 
   try {
-    const { vehicleId } = await saveVehicle(formData);
+    const { vehicleId, imageUpdated } = await saveVehicle(formData);
     revalidatePath("/");
     revalidatePath("/cars");
     revalidatePath("/rentals");
+    revalidatePath("/cars/[slug]", "page");
+    revalidatePath("/rentals/[slug]", "page");
+    revalidatePath("/admin");
     revalidatePath("/admin/vehicles");
     revalidatePath(`/admin/vehicles/${vehicleId}`);
 
     const target = new URL(`/admin/vehicles/${vehicleId}`, request.url);
-    target.searchParams.set("saved", "1");
+    target.searchParams.set("saved", imageUpdated ? "image" : "vehicle");
     return NextResponse.redirect(target, 303);
   } catch (error) {
     console.error("vehicle save failed", error);
