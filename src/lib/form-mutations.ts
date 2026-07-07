@@ -228,7 +228,21 @@ export async function saveVehicle(formData: FormData) {
     createdVehicle = true;
   }
 
+  let imageUpdated = false;
+
   if (image instanceof File && image.size > 0) {
+    const { data: existingImages, error: existingImagesError } = await supabase
+      .from("stepone_vehicle_images")
+      .select("id,storage_path,is_cover")
+      .eq("vehicle_id", vehicleId);
+
+    if (existingImagesError) {
+      if (createdVehicle) await supabase.from("stepone_vehicles").delete().eq("id", vehicleId);
+      throw new FormMutationError("The current vehicle image could not be checked. Please try again.", { cause: existingImagesError });
+    }
+
+    const previousImages = existingImages ?? [];
+    const previousCoverIds = previousImages.filter((item) => item.is_cover).map((item) => item.id);
     const storagePath = `${vehicleId}/${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${imageExtension(image.type)}`;
     const { error: uploadError } = await supabase.storage
       .from("stepone-vehicle-images")
@@ -239,33 +253,59 @@ export async function saveVehicle(formData: FormData) {
       throw new FormMutationError("The vehicle photo could not be uploaded. Please retry with a smaller image.", { cause: uploadError });
     }
 
-    const { data: publicUrl } = supabase.storage.from("stepone-vehicle-images").getPublicUrl(storagePath);
-    const { count, error: countError } = await supabase
-      .from("stepone_vehicle_images")
-      .select("id", { count: "exact", head: true })
-      .eq("vehicle_id", vehicleId);
+    if (previousImages.length) {
+      const { error: uncoverError } = await supabase
+        .from("stepone_vehicle_images")
+        .update({ is_cover: false })
+        .eq("vehicle_id", vehicleId);
 
-    if (countError) {
-      await supabase.storage.from("stepone-vehicle-images").remove([storagePath]);
-      if (createdVehicle) await supabase.from("stepone_vehicles").delete().eq("id", vehicleId);
-      throw new FormMutationError("The vehicle photo could not be saved. Please try again.", { cause: countError });
+      if (uncoverError) {
+        await supabase.storage.from("stepone-vehicle-images").remove([storagePath]);
+        if (createdVehicle) await supabase.from("stepone_vehicles").delete().eq("id", vehicleId);
+        throw new FormMutationError("The current cover image could not be replaced. Please try again.", { cause: uncoverError });
+      }
     }
 
+    const { data: publicUrl } = supabase.storage.from("stepone-vehicle-images").getPublicUrl(storagePath);
     const { error: imageRecordError } = await supabase.from("stepone_vehicle_images").insert({
       vehicle_id: vehicleId,
       image_url: publicUrl.publicUrl,
       storage_path: storagePath,
       alt_text: `${v.year} ${v.make} ${v.model}`,
-      sort_order: count ?? 0,
-      is_cover: (count ?? 0) === 0,
+      sort_order: 0,
+      is_cover: true,
     });
 
     if (imageRecordError) {
+      if (previousCoverIds.length) {
+        await supabase.from("stepone_vehicle_images").update({ is_cover: true }).in("id", previousCoverIds);
+      }
       await supabase.storage.from("stepone-vehicle-images").remove([storagePath]);
       if (createdVehicle) await supabase.from("stepone_vehicles").delete().eq("id", vehicleId);
-      throw new FormMutationError("The vehicle photo could not be attached to the listing. Please try again.", { cause: imageRecordError });
+      throw new FormMutationError("The new vehicle photo could not be attached. Please try again.", { cause: imageRecordError });
     }
+
+    const previousImageIds = previousImages.map((item) => item.id);
+    if (previousImageIds.length) {
+      const { error: oldRecordsError } = await supabase
+        .from("stepone_vehicle_images")
+        .delete()
+        .in("id", previousImageIds);
+      if (oldRecordsError) console.error("old vehicle image records cleanup failed", oldRecordsError);
+    }
+
+    const previousStoragePaths = previousImages
+      .map((item) => item.storage_path)
+      .filter((path): path is string => Boolean(path));
+    if (previousStoragePaths.length) {
+      const { error: oldFilesError } = await supabase.storage
+        .from("stepone-vehicle-images")
+        .remove(previousStoragePaths);
+      if (oldFilesError) console.error("old vehicle image files cleanup failed", oldFilesError);
+    }
+
+    imageUpdated = true;
   }
 
-  return { vehicleId };
+  return { vehicleId, imageUpdated };
 }
